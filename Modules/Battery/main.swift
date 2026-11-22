@@ -165,7 +165,6 @@ public class Battery: Module {
         self.pendingThresholdApply = nil
         if let source = self.powerSourceRunLoopSource {
             CFRunLoopRemoveSource(CFRunLoopGetMain(), source, .defaultMode)
-            CFRelease(source)
             self.powerSourceRunLoopSource = nil
         }
     }
