@@ -1,0 +1,19 @@
+.DS_Store
+
+Pods
+Carthage
+build
+xcuserdata
+
+Stats.dmg
+Stats.app
+create-dmg
+dSYMs.zip
+Stats.dmg.zip
+SMC/smc
+
+# Local reference project (not part of this repo)
+REFERENSI/
+
+Cartfile.resolved
+web
