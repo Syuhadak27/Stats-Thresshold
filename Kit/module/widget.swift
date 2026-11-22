@@ -21,6 +21,7 @@ public enum widget_t: String {
     case speed = "speed"
     case battery = "battery"
     case batteryDetails = "battery_details"
+    case batteryCharge = "battery_charge"
     case stack = "sensors" // to replace
     case memory = "memory"
     case label = "label"
@@ -55,6 +56,8 @@ public enum widget_t: String {
             return BatteryWidget(title: module, preview: preview)
         case .batteryDetails:
             return BatteryDetailsWidget(title: module, preview: preview)
+        case .batteryCharge:
+            return BatteryChargeWidget(title: module, preview: preview)
         case .stack:
             return StackWidget(title: module, config: widgetConfig, preview: preview)
         case .memory:
@@ -129,6 +132,7 @@ public enum widget_t: String {
         case .speed: return localizedString("Speed widget")
         case .battery: return localizedString("Battery widget")
         case .batteryDetails: return localizedString("Battery details widget")
+        case .batteryCharge: return "\(localizedString("Charging")) \(localizedString("Power"))"
         case .stack: return localizedString("Stack widget")
         case .memory: return localizedString("Memory widget")
         case .label: return localizedString("Label widget")

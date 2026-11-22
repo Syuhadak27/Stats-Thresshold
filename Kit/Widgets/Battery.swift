@@ -674,3 +674,96 @@ public class BatteryDetailsWidget: WidgetWrapper {
         self.display()
     }
 }
+
+/// Compact menu bar widget showing the live charging power (watts) and current
+/// (amperes). Values come straight from the battery/charger readers and take the
+/// charge threshold into account: when charging is inhibited they read ~0.
+public class BatteryChargeWidget: WidgetWrapper {
+    private let textCache = WidgetTextCache()
+    private var watts: Double = 0
+    private var amps: Double = 0
+    private var active: Bool = false
+    
+    public init(title: String, preview: Bool = false) {
+        super.init(.batteryCharge, title: title, frame: CGRect(
+            x: Constants.Widget.margin.x,
+            y: Constants.Widget.margin.y,
+            width: 44 + (2*Constants.Widget.margin.x),
+            height: Constants.Widget.height - (2*Constants.Widget.margin.y)
+        ))
+        
+        self.canDrawConcurrently = true
+        
+        if preview {
+            self.watts = 45.6
+            self.amps = 3.12
+            self.active = true
+        }
+    }
+    
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+    
+    public override func draw(_ dirtyRect: NSRect) {
+        super.draw(dirtyRect)
+        
+        var watts: Double = 0
+        var amps: Double = 0
+        var active: Bool = false
+        self.queue.sync {
+            watts = self.watts
+            amps = self.amps
+            active = self.active
+        }
+        
+        let power = active ? "\(watts.roundTo(decimalPlaces: 1)) W" : "— W"
+        let current = active ? "\(amps.roundTo(decimalPlaces: 2)) A" : "— A"
+        
+        let style = NSMutableParagraphStyle()
+        style.alignment = .center
+        let color: NSColor = active ? .textColor : .secondaryLabelColor
+        let key = "charge\(active)"
+        let attributes: () -> [NSAttributedString.Key: Any] = {
+            return [
+                NSAttributedString.Key.font: NSFont.systemFont(ofSize: 9, weight: .regular),
+                NSAttributedString.Key.foregroundColor: color,
+                NSAttributedString.Key.paragraphStyle: style
+            ]
+        }
+        let top = self.textCache.entry(power, key: key, attributes: attributes)
+        let bottom = self.textCache.entry(current, key: key, attributes: attributes)
+        let rowWidth = max(top.width, bottom.width)
+        
+        let rowHeight = self.frame.height / 2
+        top.string.draw(with: CGRect(x: Constants.Widget.margin.x, y: rowHeight+1, width: rowWidth, height: rowHeight))
+        bottom.string.draw(with: CGRect(x: Constants.Widget.margin.x, y: 1, width: rowWidth, height: rowHeight))
+        
+        self.setWidth(rowWidth.rounded(.up) + (2*Constants.Widget.margin.x))
+    }
+    
+    public func setValue(watts: Double, amps: Double, active: Bool) {
+        let updated = self.queue.sync { () -> Bool in
+            var updated = false
+            if abs(self.watts - watts) > 0.05 {
+                self.watts = watts
+                updated = true
+            }
+            if abs(self.amps - amps) > 0.005 {
+                self.amps = amps
+                updated = true
+            }
+            if self.active != active {
+                self.active = active
+                updated = true
+            }
+            return updated
+        }
+        
+        if updated {
+            DispatchQueue.main.async {
+                self.needsDisplay = true
+            }
+        }
+    }
+}

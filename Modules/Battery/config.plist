@@ -76,19 +76,26 @@
 			<key>Order</key>
 			<integer>4</integer>
 		</dict>
-		<key>icon</key>
+		<key>battery_charge</key>
 		<dict>
 			<key>Default</key>
 			<false/>
 			<key>Order</key>
 			<integer>5</integer>
 		</dict>
-		<key>text</key>
+		<key>icon</key>
 		<dict>
 			<key>Default</key>
 			<false/>
 			<key>Order</key>
 			<integer>6</integer>
+		</dict>
+		<key>text</key>
+		<dict>
+			<key>Default</key>
+			<false/>
+			<key>Order</key>
+			<integer>7</integer>
 		</dict>
 	</dict>
 	<key>Settings</key>

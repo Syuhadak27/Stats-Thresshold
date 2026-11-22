@@ -241,6 +241,17 @@ public class Battery: Module {
                     percentage: value.level,
                     time: value.isBatteryPowered ? value.timeToEmpty : value.timeToCharge
                 )
+            case let widget as BatteryChargeWidget:
+                let batteryPower = abs(value.batteryPower)
+                let watts = batteryPower > 0 ? batteryPower : value.adapterPower
+                var amps = Double(abs(value.chargingCurrent)) / 1000
+                if amps == 0 { amps = Double(abs(value.current)) / 1000 }
+                if amps == 0, value.voltage > 0 { amps = watts / value.voltage }
+                widget.setValue(
+                    watts: watts,
+                    amps: amps,
+                    active: !value.isBatteryPowered && !value.isCharged
+                )
             case let widget as TextWidget:
                 var text = self.textValue
                 let pairs = TextWidget.parseText(text)
