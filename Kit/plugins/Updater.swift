@@ -37,10 +37,12 @@ internal struct Version {
 
 public class Updater {
     private let github: URL
-    private let server: URL
+    private let server: URL?
     
     private let appName: String = Bundle.main.object(forInfoDictionaryKey: "CFBundleName") as! String
     private let currentVersion: String = "v\(Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as! String)"
+    // Must match DEVELOPMENT_TEAM of the Stats target in project.pbxproj.
+    private let expectedTeamID = "RP2S87B72W"
     
     private var observation: NSKeyValueObservation?
     
@@ -61,9 +63,15 @@ public class Updater {
         }
     }
     
-    public init(github: String, url: String) {
+    /// - Parameter url: optional custom release feed. When omitted, the GitHub
+    ///   releases API of `github` is the only update channel.
+    public init(github: String, url: String? = nil) {
         self.github = URL(string: "https://api.github.com/repos/\(github)/releases/latest")!
-        self.server = URL(string: "\(url)?macOS=\(ProcessInfo().operatingSystemVersion.getFullVersion())")!
+        if let url {
+            self.server = URL(string: "\(url)?macOS=\(ProcessInfo().operatingSystemVersion.getFullVersion())")!
+        } else {
+            self.server = nil
+        }
     }
     
     deinit {
@@ -86,30 +94,37 @@ public class Updater {
             self.lastCheckTS = Int(Date().timeIntervalSince1970)
         }
         
-        self.fetchRelease(uri: self.server) { (result, err) in
+        let finish: (String, String) -> Void = { tag, url in
+            completion(version_s(
+                current: self.currentVersion,
+                latest: tag,
+                newest: isNewestVersion(currentVersion: self.currentVersion, latestVersion: tag),
+                url: url
+            ), nil)
+        }
+        guard let server = self.server else {
+            self.fetchRelease(uri: self.github) { result, err in
+                guard let result, err == nil else {
+                    completion(nil, err)
+                    return
+                }
+                finish(result.tag, result.url)
+            }
+            return
+        }
+        
+        self.fetchRelease(uri: server) { (result, err) in
             guard let result = result, err == nil else {
-                self.fetchRelease(uri: self.github) { (result, err) in
-                    guard let result = result, err == nil else {
+                self.fetchRelease(uri: self.github) { result, err in
+                    guard let result, err == nil else {
                         completion(nil, err)
                         return
                     }
-                    
-                    completion(version_s(
-                        current: self.currentVersion,
-                        latest: result.tag,
-                        newest: isNewestVersion(currentVersion: self.currentVersion, latestVersion: result.tag),
-                        url: result.url
-                    ), nil)
+                    finish(result.tag, result.url)
                 }
                 return
             }
-            
-            completion(version_s(
-                current: self.currentVersion,
-                latest: result.tag,
-                newest: isNewestVersion(currentVersion: self.currentVersion, latestVersion: result.tag),
-                url: result.url
-            ), nil)
+            finish(result.tag, result.url)
         }
     }
     
@@ -278,18 +293,6 @@ public class Updater {
     }
     
     private func validateAppSignature(at path: String) -> String? {
-        var staticCode: SecStaticCode?
-        let url = URL(fileURLWithPath: path) as CFURL
-        var status = SecStaticCodeCreateWithPath(url, [], &staticCode)
-        guard status == errSecSuccess, let code = staticCode else {
-            return "SecStaticCodeCreateWithPath failed (\(status))"
-        }
-        let flags = SecCSFlags(rawValue: kSecCSStrictValidate | kSecCSCheckAllArchitectures | kSecCSCheckNestedCode)
-        status = SecStaticCodeCheckValidity(code, flags, nil)
-        guard status == errSecSuccess else {
-            return "SecStaticCodeCheckValidity failed (\(status))"
-        }
-        
         var selfCode: SecCode?
         guard SecCodeCopySelf([], &selfCode) == errSecSuccess, let selfCode else {
             return "SecCodeCopySelf failed"
@@ -298,14 +301,34 @@ public class Updater {
         guard SecCodeCopyStaticCode(selfCode, [], &selfStatic) == errSecSuccess, let selfStatic else {
             return "SecCodeCopyStaticCode failed"
         }
-        guard let selfTeam = self.teamID(for: selfStatic) else {
-            return "could not read current team ID"
+        let selfTeam = self.teamID(for: selfStatic)
+        
+        var staticCode: SecStaticCode?
+        let url = URL(fileURLWithPath: path) as CFURL
+        let status = SecStaticCodeCreateWithPath(url, [], &staticCode)
+        guard status == errSecSuccess, let code = staticCode else {
+            return "SecStaticCodeCreateWithPath failed (\(status))"
         }
-        guard let dmgTeam = self.teamID(for: code) else {
-            return "could not read DMG team ID"
+        let dmgTeam = self.teamID(for: code)
+        
+        // Signed update channel only: reject unsigned DMGs and anything not
+        // signed by this fork's team before it is ever mounted.
+        guard let dmgTeam else {
+            return "DMG is not signed with a Developer ID team"
         }
-        if selfTeam != dmgTeam {
-            return "team ID mismatch: \(selfTeam) vs \(dmgTeam)"
+        guard dmgTeam == self.expectedTeamID else {
+            return "unexpected signing team: \(dmgTeam)"
+        }
+        // The first v0.1.0 release was unsigned. Allow that one-time upgrade,
+        // but a signed running app must belong to the same team.
+        if let selfTeam, selfTeam != self.expectedTeamID {
+            return "team ID mismatch: \(selfTeam)"
+        }
+        
+        let flags = SecCSFlags(rawValue: kSecCSStrictValidate | kSecCSCheckAllArchitectures | kSecCSCheckNestedCode)
+        let validity = SecStaticCodeCheckValidity(code, flags, nil)
+        guard validity == errSecSuccess else {
+            return "SecStaticCodeCheckValidity failed (\(validity))"
         }
         return nil
     }

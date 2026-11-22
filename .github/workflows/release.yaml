@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
     inputs:
       dry_run:
-        description: "Build and sign only: skip notarization and release publishing"
+        description: "Build only (unsigned): skip signing, notarization and release publishing"
         type: boolean
         default: true
 
@@ -35,16 +35,38 @@ jobs:
           fi
           cat CHANGELOG.md
 
-      - name: Detect signing secrets
+      - name: Resolve signing mode
         id: signing
         env:
           CERT: ${{ secrets.DISTRIBUTION_CERTIFICATE }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          APP_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
         run: |
+          required=false
+          if [ "${{ github.event_name }}" = "push" ] || [ "${{ inputs.dry_run }}" != "true" ]; then
+            required=true
+          fi
+          echo "required=$required" >> "$GITHUB_OUTPUT"
+
+          available=false
           if [ -n "$CERT" ]; then
-            echo "available=true" >> "$GITHUB_OUTPUT"
+            available=true
+          fi
+          echo "available=$available" >> "$GITHUB_OUTPUT"
+
+          if [ "$required" = "true" ]; then
+            missing=""
+            [ -n "$CERT" ] || missing="$missing DISTRIBUTION_CERTIFICATE(+PASSWORD)"
+            [ -n "$APPLE_ID" ] || missing="$missing APPLE_ID"
+            [ -n "$APPLE_TEAM_ID" ] || missing="$missing APPLE_TEAM_ID"
+            [ -n "$APP_PASSWORD" ] || missing="$missing APPLE_APP_SPECIFIC_PASSWORD"
+            if [ -n "$missing" ]; then
+              echo "::error::Published releases must be signed and notarized. Missing secrets:$missing"
+              exit 1
+            fi
           else
-            echo "available=false" >> "$GITHUB_OUTPUT"
-            echo "::notice title=release::Signing secrets are not configured; running build-only dry run."
+            echo "::notice title=release::Dry run: building an unsigned app for local testing only."
           fi
 
       - name: Import signing certificate
@@ -75,7 +97,7 @@ jobs:
           ditto -c -k --keepParent build/Stats.app build/Stats.zip
 
       - name: Notarize
-        if: steps.signing.outputs.available == 'true' && inputs.dry_run != true
+        if: steps.signing.outputs.required == 'true'
         run: |
           xcrun notarytool submit build/Stats.zip \
             --apple-id "${{ secrets.APPLE_ID }}" \
@@ -84,7 +106,7 @@ jobs:
             --wait
 
       - name: Staple
-        if: steps.signing.outputs.available == 'true' && inputs.dry_run != true
+        if: steps.signing.outputs.required == 'true'
         run: xcrun stapler staple build/Stats.app
 
       - name: Verify signatures
@@ -97,7 +119,7 @@ jobs:
           [ "$app" = "$widget" ] || { echo "ERROR: widget version does not match app version"; exit 1; }
 
       - name: Verify gatekeeper
-        if: steps.signing.outputs.available == 'true' && inputs.dry_run != true
+        if: steps.signing.outputs.required == 'true'
         run: spctl -a -t exec -vvv build/Stats.app
 
       - name: DMG
@@ -124,8 +146,17 @@ jobs:
             build/Stats.dmg
             build/Stats.zip
 
+      - name: Verify DMG signature
+        if: steps.signing.outputs.required == 'true'
+        run: |
+          mount=$(mktemp -d /tmp/stats-dmg-verify.XXXXXX)
+          hdiutil attach build/Stats.dmg -mountpoint "$mount" -nobrowse -noautoopen -readonly
+          codesign --verify --strict --deep "$mount/Stats.app"
+          spctl -a -t exec -vvv "$mount/Stats.app"
+          hdiutil detach "$mount" -force
+
       - name: Publish
-        if: inputs.dry_run != true
+        if: steps.signing.outputs.required == 'true'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |

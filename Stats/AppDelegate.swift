@@ -22,7 +22,8 @@ import Bluetooth
 import Clock
 import Remote
 
-let updater = Updater(github: "exelban/stats", url: "https://api.mac-stats.com/release/latest")
+// Updates come from this fork's own releases, not from the upstream project.
+let updater = Updater(github: "Syuhadak27/Stats-Thresshold")
 var modules: [Module] = [
     CPU(),
     GPU(),

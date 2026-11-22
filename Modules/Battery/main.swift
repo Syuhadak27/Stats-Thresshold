@@ -177,6 +177,8 @@ public class Battery: Module {
     private func scheduleThresholdApply(delay: Double) {
         self.pendingThresholdApply?.cancel()
         let work = DispatchWorkItem {
+            // Applying re-writes the EC thresholds and re-emits the inhibit flag
+            // using the last observed level (see BatteryThresholdManager.apply).
             guard BatteryThresholdManager.shared.isEnabled else { return }
             do {
                 try BatteryThresholdManager.shared.apply()
@@ -189,6 +191,16 @@ public class Battery: Module {
         DispatchQueue.global(qos: .utility).asyncAfter(deadline: .now() + delay, execute: work)
     }
     
+    private func enforceThreshold(level: Int) {
+        let manager = BatteryThresholdManager.shared
+        guard manager.isEnabled, manager.isServiceAvailable else { return }
+        do {
+            try manager.enforce(level: level)
+        } catch {
+            NSLog("[BatteryThreshold] enforce failed: %@", error.localizedDescription)
+        }
+    }
+    
     public override func isAvailable() -> Bool {
         let snapshot = IOPSCopyPowerSourcesInfo().takeRetainedValue()
         let sources = IOPSCopyPowerSourcesList(snapshot).takeRetainedValue() as Array
@@ -197,6 +209,11 @@ public class Battery: Module {
     
     private func usageCallback(_ raw: Battery_Usage?) {
         guard let value = raw, self.enabled else { return }
+        
+        // The EC latches its charging state on AC plug events, so writing the
+        // thresholds alone is not enough to stop an in-flight charge. Drive the
+        // inhibit flag from the actual level on every sample instead.
+        self.enforceThreshold(level: Int((value.level * 100).rounded()))
         
         self.popupView.usageCallback(value)
         self.portalView.loadCallback(value)

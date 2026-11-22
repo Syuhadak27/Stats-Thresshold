@@ -40,6 +40,17 @@ internal final class BatteryThresholdManager {
     private let batteryProperty = "Battery"
     private let batteryIndex = 1  // BAT_PRIMARY (0 = ANY, 1 = PRIMARY, 2 = SECONDARY)
     
+    // YogaSMC maps setCMstart/setCMstop to the EC methods BCCS/BCSS, but the EC
+    // only re-evaluates them when AC is plugged/unplugged. A charge that started
+    // before the threshold was written keeps going until the next plug event.
+    // setCMInhibitCharge (EC BICS) is the active switch we drive from the level.
+    private let inhibitChargeKey = "setCMInhibitCharge"
+    
+    // Serializes all EC writes and protects the latched inhibit state.
+    private let queue = DispatchQueue(label: "eu.exelban.Stats.Battery.threshold", qos: .utility)
+    private var inhibited: Bool? = nil
+    private var lastLevel: Int? = nil
+    
     private let startKey = "Battery_thresholdStart"
     private let stopKey = "Battery_thresholdStop"
     private let enabledKey = "Battery_thresholdEnabled"
@@ -111,24 +122,70 @@ internal final class BatteryThresholdManager {
     /// Disabling restores the full range (start 0 / stop 100, no charge inhibit).
     @discardableResult
     func apply(start: Int? = nil, stop: Int? = nil, enabled: Bool? = nil) throws -> Bool {
-        let s = start.map(Self.clamp) ?? self.start
-        let t = stop.map(Self.clamp) ?? self.stop
-        let e = enabled ?? self.isEnabled
-        if start != nil { self.start = s }
-        if stop != nil { self.stop = t }
-        if enabled != nil { self.isEnabled = e }
-        
-        var props: [String: Any] = [self.batteryProperty: self.batteryIndex]
-        if e {
-            props["setCMstart"] = s
-            props["setCMstop"] = t
-        } else {
-            props["setCMstart"] = 0
-            props["setCMstop"] = 100
-            props["setCMInhibitCharge"] = 0
+        return try self.queue.sync {
+            let s = start.map(Self.clamp) ?? self.start
+            let t = stop.map(Self.clamp) ?? self.stop
+            let e = enabled ?? self.isEnabled
+            if start != nil { self.start = s }
+            if stop != nil { self.stop = t }
+            if enabled != nil { self.isEnabled = e }
+            
+            var props: [String: Any] = [self.batteryProperty: self.batteryIndex]
+            if e {
+                props["setCMstart"] = s
+                props["setCMstop"] = t
+            } else {
+                props["setCMstart"] = 0
+                props["setCMstop"] = 100
+                props[self.inhibitChargeKey] = 0
+            }
+            try self.send(props)
+            
+            // A threshold write makes the EC state unknown. Re-emit the inhibit
+            // flag right away using the last observed level instead of waiting
+            // for the next battery sample.
+            self.inhibited = e ? nil : false
+            if e, let level = self.lastLevel {
+                try self.enforceLocked(level: level)
+            }
+            return e
         }
-        try self.send(props)
-        return e
+    }
+    
+    /// Actively holds the charge inside the configured window. Call this on every
+    /// battery sample: the EC otherwise keeps charging when a threshold is written
+    /// after AC was connected, and only corrects itself on the next plug event.
+    func enforce(level: Int) throws {
+        try self.queue.sync {
+            try self.enforceLocked(level: level)
+        }
+    }
+    
+    private func enforceLocked(level: Int) throws {
+        guard self.isEnabled else { return }
+        
+        let l = Self.clamp(level)
+        self.lastLevel = l
+        
+        let target: Bool
+        if l >= self.stop {
+            target = true
+        } else if l <= self.start {
+            target = false
+        } else {
+            // Inside the window keep the previous state. When it is unknown
+            // (app start, threshold change, AC replug), stay off until the
+            // battery drains down to the start threshold.
+            target = self.inhibited ?? true
+        }
+        
+        guard self.inhibited != target else { return }
+        try self.send([
+            self.batteryProperty: self.batteryIndex,
+            self.inhibitChargeKey: target ? 1 : 0
+        ])
+        self.inhibited = target
+        NSLog("[BatteryThreshold] inhibit charge = %d at %d%%", target ? 1 : 0, l)
     }
     
     /// Debug only: raw BAT_PRIMARY data (BCTG/BCSG) goes to Console, never to the UI.

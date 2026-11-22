@@ -15,5 +15,8 @@ SMC/smc
 # Local reference project (not part of this repo)
 REFERENSI/
 
+# Local OpenCore/YogaSMC reference (never commit or push)
+EFI/
+
 Cartfile.resolved
 web
