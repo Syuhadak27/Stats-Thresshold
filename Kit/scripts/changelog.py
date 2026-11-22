@@ -5,7 +5,11 @@ import re
 
 def last_release_tag():
     cmd = "git describe --abbrev=0 --tags HEAD^"
-    output = subprocess.check_output(['bash', '-c', cmd])
+    try:
+        output = subprocess.check_output(['bash', '-c', cmd], stderr=subprocess.DEVNULL)
+    except subprocess.CalledProcessError:
+        # Fresh repository / manual dry run without any release tag yet.
+        return None
     return output.decode("utf-8").strip()
 
 
@@ -23,6 +27,9 @@ class Changelog:
 
     def generate(self):
         tag = last_release_tag()
+        if not tag:
+            print("No previous release tag found, skipping changelog.", file=sys.stderr)
+            return
         tag_hash = git_hash(tag)
 
         fix, feat, lang = self.commits(tag_hash)
