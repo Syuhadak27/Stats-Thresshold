@@ -44,7 +44,7 @@ internal final class BatteryThresholdManager {
     private let stopKey = "Battery_thresholdStop"
     private let enabledKey = "Battery_thresholdEnabled"
     
-    private static var masterPort: mach_port_t {
+    private static var ioPort: mach_port_t {
         if #available(macOS 12.0, *) { return kIOMainPortDefault }
         return kIOMasterPortDefault
     }
@@ -84,7 +84,7 @@ internal final class BatteryThresholdManager {
     
     private func copyService() throws -> io_registry_entry_t {
         let matching = IOServiceMatching(self.serviceName)
-        let service = IOServiceGetMatchingService(Self.masterPort, matching)
+        let service = IOServiceGetMatchingService(Self.ioPort, matching)
         guard service != 0 else { throw BatteryThresholdError.serviceNotFound }
         return service
     }

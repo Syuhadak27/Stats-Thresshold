@@ -512,6 +512,13 @@
 "Level" = "Ниво"; // qwen3.8:27b
 
 // Bluetooth
+"Battery threshold" = "Battery threshold";
+"Requires YogaSMC (ThinkVPC)" = "Requires YogaSMC (ThinkVPC)";
+"Enable threshold" = "Enable threshold";
+"Start charging at" = "Start charging at";
+"Stop charging at" = "Stop charging at";
+"ThinkVPC (YogaSMC) service not found" = "ThinkVPC (YogaSMC) service not found. Make sure YogaSMC 1.5.3 is loaded.";
+"Could not write battery threshold (0x%08X)" = "Could not write battery threshold (0x%08X). Administrator rights may be required.";
 "No Bluetooth devices are available" = "Няма налични Bluetooth устройства";
 "Bluetooth threshold" = "Bluetooth праг"; // qwen3.8:27b
 
