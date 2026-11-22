@@ -15,6 +15,9 @@ concurrency:
   group: release-${{ github.ref }}
   cancel-in-progress: true
 
+permissions:
+  contents: write
+
 jobs:
   release:
     runs-on: macos-latest
@@ -27,6 +30,9 @@ jobs:
       - name: Generate changelog
         run: |
           python3 Kit/scripts/changelog.py > CHANGELOG.md
+          if [ ! -s CHANGELOG.md ]; then
+            echo "Battery charge threshold build." > CHANGELOG.md
+          fi
           cat CHANGELOG.md
 
       - name: Detect signing secrets
@@ -62,6 +68,12 @@ jobs:
           xcodebuild -exportArchive -exportOptionsPlist exportOptions.plist -archivePath build/Stats.xcarchive -exportPath build
           ditto -c -k --keepParent build/Stats.app build/Stats.zip
 
+      - name: Stage app for packaging
+        if: steps.signing.outputs.available != 'true'
+        run: |
+          cp -R build/Stats.xcarchive/Products/Applications/Stats.app build/Stats.app
+          ditto -c -k --keepParent build/Stats.app build/Stats.zip
+
       - name: Notarize
         if: steps.signing.outputs.available == 'true' && inputs.dry_run != true
         run: |
@@ -89,7 +101,6 @@ jobs:
         run: spctl -a -t exec -vvv build/Stats.app
 
       - name: DMG
-        if: steps.signing.outputs.available == 'true'
         run: |
           git clone --depth 1 https://github.com/create-dmg/create-dmg
           ./create-dmg/create-dmg \
@@ -105,15 +116,16 @@ jobs:
             build/Stats.dmg build/Stats.app
           rm -rf ./create-dmg
 
-      - name: Upload DMG
-        if: steps.signing.outputs.available == 'true' && inputs.dry_run == true
+      - name: Upload build artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: Stats.dmg
-          path: build/Stats.dmg
+          name: Stats-${{ github.ref_name }}
+          path: |
+            build/Stats.dmg
+            build/Stats.zip
 
       - name: Publish
-        if: steps.signing.outputs.available == 'true' && inputs.dry_run != true
+        if: inputs.dry_run != true
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
