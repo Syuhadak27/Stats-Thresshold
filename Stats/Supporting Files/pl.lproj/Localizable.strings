@@ -234,6 +234,7 @@
 "State widget" = "Stan";
 "Text widget" = "Tekst";
 "Battery details widget" = "Widżet szczegółów baterii";
+"Hide when not charging" = "Hide when not charging";
 "Show symbols" = "Pokaż symbole";
 "Label widget" = "Etykieta";
 "Number of reads in the chart" = "Liczba odczytów na wykresie";

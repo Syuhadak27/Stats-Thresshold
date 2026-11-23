@@ -234,6 +234,7 @@
 "State widget" = "狀態小工具";
 "Text widget" = "文字";
 "Battery details widget" = "電池詳細資訊";
+"Hide when not charging" = "Hide when not charging";
 "Show symbols" = "顯示符號";
 "Label widget" = "標籤";
 "Number of reads in the chart" = "圖表顯示的讀取次數";

@@ -234,6 +234,7 @@
 "State widget" = "Olekuvidin";
 "Text widget" = "Tekstividin";
 "Battery details widget" = "Aku üksikasjade vidin";
+"Hide when not charging" = "Hide when not charging";
 "Show symbols" = "Näita sümboleid";
 "Label widget" = "Sildividin";
 "Number of reads in the chart" = "Lugemiste arv diagrammil";

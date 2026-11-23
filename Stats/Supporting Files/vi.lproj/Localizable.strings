@@ -234,6 +234,7 @@
 "State widget" = "Widget trạng thái";
 "Text widget" = "Widget văn bản"; // gemma4:31b
 "Battery details widget" = "Widget chi tiết pin"; // gemma4:31b
+"Hide when not charging" = "Hide when not charging";
 "Show symbols" = "Hiển thị ký hiệu";
 "Label widget" = "Widget nhãn";
 "Number of reads in the chart" = "Số lần đọc trong biểu đồ";

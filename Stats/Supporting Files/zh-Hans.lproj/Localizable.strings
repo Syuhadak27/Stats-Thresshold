@@ -234,6 +234,7 @@
 "State widget" = "状态";
 "Text widget" = "文本";
 "Battery details widget" = "电池详情";
+"Hide when not charging" = "Hide when not charging";
 "Show symbols" = "显示标识";
 "Label widget" = "标签";
 "Number of reads in the chart" = "图表显示的读取次数";

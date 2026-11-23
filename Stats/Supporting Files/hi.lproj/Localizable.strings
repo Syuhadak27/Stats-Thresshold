@@ -234,6 +234,7 @@
 "State widget" = "स्थिति विजेट";
 "Text widget" = "टेक्स्ट विजेट"; // translategemma:4b
 "Battery details widget" = "बैटरी विवरण विजेट"; // translategemma:4b
+"Hide when not charging" = "Hide when not charging";
 "Show symbols" = "प्रतीक दिखाएँ";
 "Label widget" = "लेबल";
 "Number of reads in the chart" = "चार्ट में पढ़ने की संख्या";

@@ -234,6 +234,7 @@
 "State widget" = "Tila";
 "Text widget" = "Tekstiwidget"; // gemma4:31b
 "Battery details widget" = "Akun tiedot -widget"; // translategemma:4b
+"Hide when not charging" = "Hide when not charging";
 "Show symbols" = "Näytä symbolit";
 "Label widget" = "Tunniste";
 "Number of reads in the chart" = "Lukukertojen määrä kaaviossa";

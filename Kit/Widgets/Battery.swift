@@ -683,6 +683,7 @@ public class BatteryChargeWidget: WidgetWrapper {
     private var watts: Double = 0
     private var amps: Double = 0
     private var active: Bool = false
+    private var hideWhenIdle: Bool = true
     
     public init(title: String, preview: Bool = false) {
         super.init(.batteryCharge, title: title, frame: CGRect(
@@ -698,6 +699,11 @@ public class BatteryChargeWidget: WidgetWrapper {
             self.watts = 45.6
             self.amps = 3.12
             self.active = true
+        } else {
+            self.hideWhenIdle = Store.shared.bool(
+                key: "\(self.title)_\(self.type.rawValue)_hideWhenIdle",
+                defaultValue: self.hideWhenIdle
+            )
         }
     }
     
@@ -711,10 +717,17 @@ public class BatteryChargeWidget: WidgetWrapper {
         var watts: Double = 0
         var amps: Double = 0
         var active: Bool = false
+        var hideWhenIdle: Bool = true
         self.queue.sync {
             watts = self.watts
             amps = self.amps
             active = self.active
+            hideWhenIdle = self.hideWhenIdle
+        }
+        
+        if hideWhenIdle && !active {
+            self.setWidth(0)
+            return
         }
         
         let power = active ? "\(watts.roundTo(decimalPlaces: 1)) W" : "— W"
@@ -765,5 +778,31 @@ public class BatteryChargeWidget: WidgetWrapper {
                 self.needsDisplay = true
             }
         }
+    }
+    
+    // MARK: - Settings
+    
+    public override func settings() -> NSView {
+        let view = SettingsContainerView()
+        let toggle = self.switchView(
+            action: #selector(self.toggleHideWhenIdle),
+            state: self.hideWhenIdle
+        )
+        view.addArrangedSubview(PreferencesSection([
+            PreferencesRow(localizedString("Hide when not charging"), component: toggle)
+        ]))
+        return view
+    }
+    
+    @objc private func toggleHideWhenIdle(_ sender: NSControl) {
+        let state = controlState(sender)
+        self.queue.sync {
+            self.hideWhenIdle = state
+        }
+        Store.shared.set(
+            key: "\(self.title)_\(self.type.rawValue)_hideWhenIdle",
+            value: state
+        )
+        self.display()
     }
 }

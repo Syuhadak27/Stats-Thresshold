@@ -234,6 +234,7 @@
 "State widget" = "ویجت حالت";
 "Text widget" = "ویجت متن"; // gemma4:31b
 "Battery details widget" = "ویجت جزئیات باتری"; // gemma4:31b
+"Hide when not charging" = "Hide when not charging";
 "Show symbols" = "نمایش نمادها";
 "Label widget" = "لیبل";
 "Number of reads in the chart" = "تعداد خواندن‌ها در نمودار";

@@ -234,6 +234,7 @@
 "State widget" = "Pripomoček stanja";
 "Text widget" = "Besedilo";
 "Battery details widget" = "Podrobnosti baterije";
+"Hide when not charging" = "Hide when not charging";
 "Show symbols" = "Prikaži simbole";
 "Label widget" = "Oznaka";
 "Number of reads in the chart" = "Število branj v grafu";

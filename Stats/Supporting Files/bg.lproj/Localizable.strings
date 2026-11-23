@@ -234,6 +234,7 @@
 "State widget" = "Виджет за състояние"; // gemma4:31b
 "Text widget" = "Текстов уиджет"; // gemma4:31b
 "Battery details widget" = "Виджет с подробности за батерията"; // gemma4:31b
+"Hide when not charging" = "Hide when not charging";
 "Show symbols" = "Показване на символи";
 "Label widget" = "Етикет";
 "Number of reads in the chart" = "Брой прочитания в графиката";

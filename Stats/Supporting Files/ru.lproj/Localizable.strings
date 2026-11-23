@@ -234,6 +234,7 @@
 "State widget" = "Состояние";
 "Text widget" = "Текст";
 "Battery details widget" = "Виджет сведений о батарее";
+"Hide when not charging" = "Hide when not charging";
 "Show symbols" = "Показать символы";
 "Label widget" = "Метка";
 "Number of reads in the chart" = "Количество чтений на графике";

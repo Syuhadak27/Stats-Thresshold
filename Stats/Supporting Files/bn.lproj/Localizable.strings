@@ -234,6 +234,7 @@
 "State widget" = "অবস্থা উইজেট";
 "Text widget" = "টেক্সট উইজেট";
 "Battery details widget" = "ব্যাটারি বিস্তারিত উইজেট";
+"Hide when not charging" = "Hide when not charging";
 "Show symbols" = "প্রতীক দেখান";
 "Label widget" = "লেবেল";
 "Number of reads in the chart" = "চার্টে পড়ার সংখ্যা";

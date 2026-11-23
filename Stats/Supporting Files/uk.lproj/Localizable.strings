@@ -234,6 +234,7 @@
 "State widget" = "Стан";
 "Text widget" = "Текст";
 "Battery details widget" = "Віджет даних про акумулятор";
+"Hide when not charging" = "Hide when not charging";
 "Show symbols" = "Показати символи";
 "Label widget" = "Етикетка";
 "Number of reads in the chart" = "Кількість зчитувань на діаграмі";

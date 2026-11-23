@@ -234,6 +234,7 @@
 "State widget" = "Widget stanja"; // gemma4:31b
 "Text widget" = "Tekstualni widget"; // gemma4:31b
 "Battery details widget" = "Vidžet detalja baterije"; // gemma4:31b
+"Hide when not charging" = "Hide when not charging";
 "Show symbols" = "Prikaži simbole";
 "Label widget" = "Oznaka";
 "Number of reads in the chart" = "Broj čitanja u dijagramu";

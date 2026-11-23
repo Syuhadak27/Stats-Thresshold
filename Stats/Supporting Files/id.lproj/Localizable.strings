@@ -234,6 +234,7 @@
 "State widget" = "Widget status"; // gemma4:31b
 "Text widget" = "Widget teks"; // gemma4:31b
 "Battery details widget" = "Widget detail baterai"; // translategemma:4b
+"Hide when not charging" = "Hide when not charging";
 "Show symbols" = "Tampilkan simbol";
 "Label widget" = "Label";
 "Number of reads in the chart" = "Jumlah yang dibaca pada diagram";

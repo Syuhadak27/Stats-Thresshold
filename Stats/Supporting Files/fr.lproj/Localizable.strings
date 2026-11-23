@@ -234,6 +234,7 @@
 "State widget" = "Widget d'état";
 "Text widget" = "Widget texte"; // gemma4:31b
 "Battery details widget" = "Widget des détails de la batterie"; // gemma4:31b
+"Hide when not charging" = "Hide when not charging";
 "Show symbols" = "Afficher les symboles";
 "Label widget" = "Étiquette";
 "Number of reads in the chart" = "Nombre de lectures sur le graphique";
